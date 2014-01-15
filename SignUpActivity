@@ -1,0 +1,93 @@
+package com.example.stockprice;
+
+import android.app.ActionBar;
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.text.InputType;
+import android.util.Log;
+import android.view.Menu;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class SignUpActivity extends Activity {
+	
+	Activity thisActivity = this;
+	
+	AccountDatabase db;
+	
+	private Button buttonCancel;
+	private Button buttonRegister;
+	
+	TextView textViewName;
+	TextView textViewCredential;
+
+	EditText editTextFirstName;
+	EditText editTextLastName;
+	EditText editTextEmail;
+	EditText editTextPassword;
+	
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.sign_up);
+		
+		//Hide ActionBar
+		ActionBar actionBar = getActionBar();
+		actionBar.hide();
+		
+		editTextFirstName = (EditText) findViewById(R.id.editTextFirstName);
+		editTextLastName = (EditText) findViewById(R.id.editTextLastName);
+		
+		editTextEmail = (EditText) findViewById(R.id.editTextEmail);
+		editTextPassword = (EditText) findViewById(R.id.editTextPassword);
+		editTextPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+		
+		buttonCancel = (Button) findViewById(R.id.buttonCancel);
+		buttonRegister = (Button) findViewById(R.id.buttonRegister);
+		
+		OnClickListener signUpActivityOnClickListener = new OnClickListener(){
+
+			@Override
+			public void onClick(View v) {
+				
+				switch(v.getId()){
+				
+				case R.id.buttonRegister:
+				   
+					db = new AccountDatabase(getApplicationContext() , 
+				    		editTextFirstName.getText().toString(), editTextLastName.getText().toString()
+				    			, editTextPassword.getText().toString(), editTextEmail.getText().toString(), "-");
+
+				    db.insertToDatabase();
+
+			    	Toast toast = Toast.makeText(getApplicationContext(), "Account created.", Toast.LENGTH_LONG);
+			    	toast.show();
+				    
+				    thisActivity.finish();
+				    break;
+				
+				case R.id.buttonCancel:
+					thisActivity.finish();
+					break;
+				}	
+			}	
+		};
+		
+		buttonRegister.setOnClickListener(signUpActivityOnClickListener);
+		buttonCancel.setOnClickListener(signUpActivityOnClickListener);
+		
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		//getMenuInflater().inflate(R.menu.main, menu);
+		return true;
+	}
+
+}
