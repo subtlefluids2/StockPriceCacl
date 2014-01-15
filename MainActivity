@@ -1,0 +1,265 @@
+package com.example.stockprice;
+
+
+import java.util.Locale;
+
+
+import android.app.ActionBar;
+import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
+import android.content.res.Configuration;
+import android.os.Bundle;
+import android.support.v4.app.ActionBarDrawerToggle;
+import android.support.v4.widget.DrawerLayout;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class MainActivity extends Activity {
+	
+	//Navigation Drawer related instances
+	FrameLayout contentFrame;
+	DrawerLayout mDrawerLayout;
+	ListView mDrawerList;
+	LinearLayout mDrawerContainer;
+	String[] mDrawerTitles;
+	ActionBar actionBar;
+	ActionBarDrawerToggle mDrawerToggle;
+	
+	TextView accountNameTextView;
+	ImageView accountPicture;
+	String accountEmail;
+	
+	Fragment fragment;
+	
+	int activeFragmentPosition = 0;
+	
+	@Override
+	public void onCreate(Bundle savedInstanceState){
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.navigation_drawer);
+		
+		
+		//Initialize Navigation Drawer 
+		mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+		
+		mDrawerContainer = (LinearLayout) findViewById(R.id.drawer_container);
+		
+			//Populate Navigation Drawer List
+		mDrawerTitles = getResources().getStringArray(R.array.planets_array);
+		mDrawerList = (ListView) findViewById(R.id.left_drawer);
+		
+		mDrawerList.setAdapter(new ArrayAdapter<String>(this, R.layout.drawer_list_item, mDrawerTitles));
+		
+			//Open and Close with the App Icon
+		mDrawerToggle = new ActionBarDrawerToggle(
+				this, 
+				mDrawerLayout,
+				R.drawable.ic_drawer, 
+				R.string.drawer_open, 
+				R.string.drawer_close) {
+		};
+		
+		mDrawerLayout.setDrawerListener(mDrawerToggle);
+		
+		actionBar = getActionBar();
+		actionBar.setDisplayHomeAsUpEnabled(true);
+		actionBar.setHomeButtonEnabled(true);
+		
+		accountNameTextView = (TextView) findViewById(R.id.account_name);
+		
+		accountEmail = getIntent().getExtras().getString("email");
+		personalizePage(accountEmail);
+		
+		accountPicture = (ImageView) findViewById(R.id.nav_account_picture);
+		accountPicture.setImageResource(getImageResource());
+		
+			//Set the adapter for the ListView
+		 mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
+
+		
+         fragment = new BlackScholesFragment();
+         activeFragmentPosition = 0;
+         FragmentManager fragmentManager = getFragmentManager();
+         fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
+
+         // update selected item and title, then close the drawer
+         mDrawerList.setItemChecked(activeFragmentPosition, true);
+         setTitle(mDrawerTitles[activeFragmentPosition]);
+		 
+	}
+	
+
+	/* The click listner for ListView in the navigation drawer */
+    private class DrawerItemClickListener implements ListView.OnItemClickListener {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            selectItem(position);
+        }
+    }
+    
+    private void selectItem(int position) {
+        // update the main content by replacing fragments
+    	
+    	
+    	switch(position){
+    	
+    	case 0:
+            fragment = new BlackScholesFragment();
+            activeFragmentPosition = 0;
+            break;
+    	case 1:
+    		fragment = new GraphFragment();
+            activeFragmentPosition = 1;
+            break;
+    	case 2:
+    		fragment = new PlanetFragment();
+            Bundle args = new Bundle();
+            args.putInt(PlanetFragment.ARG_PLANET_NUMBER, position);
+            fragment.setArguments(args);
+    		break;
+    	case 3:
+    		fragment = new AccountFragment();
+    		((AccountFragment)fragment).setCallingActivity("MainActivity");
+            activeFragmentPosition = 3;
+            Bundle bundle = new Bundle();
+            bundle.putString("email", accountEmail);
+            fragment.setArguments(bundle);
+    		break;
+        
+    	}
+
+        
+        FragmentManager fragmentManager = getFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
+
+        // update selected item and title, then close the drawer
+        mDrawerList.setItemChecked(position, true);
+        setTitle(mDrawerTitles[position]);
+        mDrawerLayout.closeDrawer(mDrawerContainer);
+        
+    }
+
+    
+    
+    
+    @Override
+    public void setTitle(CharSequence title) {
+        getActionBar().setTitle(title);
+    }
+	
+	
+	@Override
+	protected void onPostCreate(Bundle savedInstanceState){
+		super.onPostCreate(savedInstanceState);
+		// Sync the toggle state after onRestoreInstanceState has occurred.
+		mDrawerToggle.syncState();
+	}
+	
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        mDrawerToggle.onConfigurationChanged(newConfig);
+    }
+
+    //Action Bar related Method(s)
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Pass the event to ActionBarDrawerToggle, if it returns
+        // true, then it has handled the app icon touch event
+        if (mDrawerToggle.onOptionsItemSelected(item)) {
+          return true;
+        }
+        // Handle your other action bar items...
+
+        return super.onOptionsItemSelected(item);
+    }
+    
+    public static class PlanetFragment extends Fragment {
+        public static final String ARG_PLANET_NUMBER = "planet_number";
+
+        public PlanetFragment() {
+            // Empty constructor required for fragment subclasses
+        }
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                Bundle savedInstanceState) {
+            View rootView = inflater.inflate(R.layout.fragment_planet, container, false);
+            int i = getArguments().getInt(ARG_PLANET_NUMBER);
+            String planet = getResources().getStringArray(R.array.planets_array)[i];
+
+            int imageId = getResources().getIdentifier(planet.toLowerCase(Locale.getDefault()),
+                            "drawable", getActivity().getPackageName());
+            ((ImageView) rootView.findViewById(R.id.image)).setImageResource(imageId);
+            getActivity().setTitle(planet);
+            return rootView;
+        }
+    }
+	
+    private int getImageResource(){
+    	int imageResource = 0;
+    	if(accountEmail.equals("chris.bobby@email.com")){
+    		imageResource = R.drawable.man1;
+    	} else if(accountEmail.equals("carlo.putra@email.com")){
+    		imageResource = R.drawable.man2;
+    	} else if(accountEmail.equals("erlangga@email.com")){
+    		imageResource = R.drawable.man3;
+    	} else if(accountEmail.equals("kai.nathan@email.com")){
+    		imageResource = R.drawable.man4;
+    	} else {
+    		imageResource = R.drawable.man0;
+    	}
+    	
+    	return imageResource;
+    	
+    }
+    
+    @Override
+    public void onBackPressed(){
+       
+    	switch(activeFragmentPosition){
+    	
+    	case 0:
+    		if(((BlackScholesFragment) fragment).onBackPressed()) super.onBackPressed();
+        	break;
+        
+    	case 1:
+    		if(((GraphFragment) fragment).onBackPressed()) super.onBackPressed();
+        	break;
+    	case 3:
+    		if(((AccountFragment) fragment).onBackPressed()) super.onBackPressed();
+        	break;
+        	
+    	}
+       
+    }
+    
+	
+	public void setAccountName(String newAccountName){
+		accountNameTextView.setText(newAccountName);
+	}
+
+	public void personalizePage(String email) {
+		AccountDatabase db = new AccountDatabase(getApplicationContext());
+		String[] accountData =  db.getAccountDataFromEmail(email);
+		
+		accountNameTextView.setText(accountData[0] + " " + accountData[1]);
+		
+	}
+
+    
+}
